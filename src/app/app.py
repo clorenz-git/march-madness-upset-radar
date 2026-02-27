@@ -1,11 +1,16 @@
 import os
+from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
 st.set_page_config(page_title="March Madness Upset Radar", layout="wide")
 
+# Load local .env when running Streamlit without exported shell vars.
+ROOT_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(ROOT_DIR / ".env")
 DB_URL = os.getenv("DB_URL")
 if not DB_URL:
     raise ValueError("DB_URL is not set. Add it to your environment or local .env file.")
@@ -187,7 +192,25 @@ def top_regular_season_teams(season: int, limit: int):
     """
     return pd.read_sql(text(q), engine, params={"season": season, "limit": limit})
 
-
+@st.cache_data(ttl=300)
+def tourney_odds_by_win_range():
+    q = """
+    SELECT
+      CASE
+        WHEN win_pct < 0.55 THEN '<55%'
+        WHEN win_pct < 0.60 THEN '55-60%'
+        WHEN win_pct < 0.65 THEN '60-65%'
+        WHEN win_pct < 0.70 THEN '65-70%'
+        WHEN win_pct < 0.75 THEN '70-75%'
+        WHEN win_pct < 0.80 THEN '75-80%'
+        ELSE '80%+'
+      END AS win_range,
+      ROUND(100.0 * SUM(made_tournament)/COUNT(*),1) AS pct_made_tourney
+    FROM mart.team_tourney_training_data
+    GROUP BY win_range
+    ORDER BY win_range;
+    """
+    return pd.read_sql(text(q), engine)
 # UI for Streamlit app
 
 st.title("March Madness Upset Radar (Modern Era)")
@@ -242,6 +265,31 @@ with g2:
         height=2.6
     )
 
+st.divider()
+st.subheader("Historical Tournament Odds by Win Percentage")
+
+df_odds = tourney_odds_by_win_range()
+
+primary = "#E03A3E"      # NCAA red vibe
+secondary = "#17408B"    # NCAA blue vibe
+
+fig, ax = plt.subplots(figsize=(6.2, 2.2), dpi=120)
+
+bars = ax.bar(df_odds["win_range"], df_odds["pct_made_tourney"])
+
+# Color gradient red → blue
+colors = [primary, "#f25c5f", "#f78c6b", "#ffd166", "#9ad1d4", "#5fa8d3", secondary]
+for bar, color in zip(bars, colors):
+    bar.set_color(color)
+
+ax.set_title("Chance of Making March Madness by Win %")
+ax.set_ylabel("Probability (%)")
+ax.set_xlabel("Regular Season Win %")
+
+ax.grid(alpha=0.3)
+fig.tight_layout()
+
+st.pyplot(fig, use_container_width=False)
 st.divider()
 
 # Bottom section: seed performance plus regular season context
