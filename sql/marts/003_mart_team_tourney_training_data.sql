@@ -32,3 +32,6 @@ FROM base b
 LEFT JOIN seeds s
     ON b.team_id = s.team_id
     AND b.season = s.season;
+
+CREATE INDEX idx_team_tourney_training_data_season_team
+    ON mart.team_tourney_training_data (season, team_id);
