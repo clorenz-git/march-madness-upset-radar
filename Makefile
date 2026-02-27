@@ -21,6 +21,7 @@ staging:
 marts:
 	psql $(DB) -f sql/marts/001_mart_team_season_stats.sql
 	psql $(DB) -f sql/marts/002_mart_tourney_upsets.sql
+	psql $(DB) -f sql/marts/003_mart_team_tourney_training_data.sql
 
 run: ddl load staging marts
 	@echo "Pipeline complete"
