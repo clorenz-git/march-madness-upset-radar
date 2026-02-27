@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.crt
+secrets/
+
+# Local database/files
+*.db
+*.sqlite
+*.sqlite3
+*.sql.gz
+*.dump
+
+# Raw source data (keep folder, ignore contents)
+data/raw/*
+!data/raw/.gitkeep
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Docker
+*.log
